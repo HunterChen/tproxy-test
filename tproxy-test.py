@@ -103,13 +103,19 @@ tproxy_sockets = {
   (socket.AF_INET6, True): tproxy_plus_socket_rules_ipv6_sockets,
 }
 
-def load_iptables(a, family=socket.AF_INET, socket_type=socket.SOCK_STREAM, socket_rule=False):
+def load_iptables(a, family=socket.AF_INET, socket_type=socket.SOCK_STREAM, socket_rule=False, explicit_on_ip=False):
 
     header = """
 *filter
 :INPUT ACCEPT [0:0]
 :FORWARD ACCEPT [0:0]
 :OUTPUT ACCEPT [0:0]
+-A INPUT -p tcp --dport 22 -j ACCEPT
+-A INPUT -m mark --mark 1/1 -j ACCEPT
+-A INPUT -j LOG --log-prefix "PF/INPUT: DROP "
+-A INPUT -j DROP
+-A FORWARD -j LOG --log-prefix "PF/FORWARD: DROP "
+-A FORWARD -j DROP
 COMMIT
 *mangle
 :PREROUTING ACCEPT [0:0]
