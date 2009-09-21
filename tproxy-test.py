@@ -136,9 +136,14 @@ COMMIT
     if socket_rule:
         rules += """-A PREROUTING -m socket --transparent -j DIVERT\n"""
 
-    
+    if explicit_on_ip:
+        rules += """
+-A PREROUTING -p %(proto)s -m %(proto)s --dport %(target_port)d -j TPROXY --on-port %(proxy_port)d --on-ip %(proxy_ip)s --tproxy-mark 0x1/0x1""" % subst
+    else:
+        rules += """
+-A PREROUTING -p %(proto)s -m %(proto)s --dport %(target_port)d -j TPROXY --on-port %(proxy_port)d --tproxy-mark 0x1/0x1""" % subst
+
     rules += """
--A PREROUTING -p %(proto)s -m %(proto)s --dport %(target_port)d -j TPROXY --on-port %(proxy_port)d --on-ip %(proxy_ip)s --tproxy-mark 0x1/0x1 
 -A DIVERT -j MARK --set-xmark 0x1/0x1
 -A DIVERT -j ACCEPT 
 COMMIT
@@ -156,10 +161,10 @@ def open_listener(a, family, socket_type, addr):
     return s
 
 
-def run_sockets(a, family=socket.AF_INET, socket_type=socket.SOCK_STREAM, socket_rule=False, sockets=()):
+def run_sockets(a, family=socket.AF_INET, socket_type=socket.SOCK_STREAM, socket_rule=False, explicit_on_ip=False, sockets=()):
 
     skip_irrelevant = False
-    load_iptables(a, family, socket_type, socket_rule)
+    load_iptables(a, family, socket_type, socket_rule, explicit_on_ip)
     
     open_sockets = []
     
@@ -249,7 +254,8 @@ def run_testcases(a, all_sockets):
     for family in (socket.AF_INET6, socket.AF_INET):
         for socket_type in (socket.SOCK_DGRAM, socket.SOCK_STREAM):
             for socket_rule in (False, True):
-                run_sockets(a, family, socket_type, socket_rule, all_sockets[(family, socket_rule)])
+                for explicit_on_ip in (False, True):
+                    run_sockets(a, family, socket_type, socket_rule, explicit_on_ip, all_sockets[(family, socket_rule)])
     
 # testcases
 #   TPROXY rule only, no "socket" match
