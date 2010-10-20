@@ -96,6 +96,14 @@ tproxy_plus_socket_rules_ipv6_sockets = (
  )
 )
 
+def debug(*args):
+    global debug_flag
+    
+    if debug_flag:
+        for arg in args:
+            print arg,
+        print
+
 tproxy_sockets = {
   (socket.AF_INET, False): tproxy_rule_only_ipv4_sockets,
   (socket.AF_INET, True): tproxy_plus_socket_rules_ipv4_sockets,
@@ -155,7 +163,7 @@ COMMIT
 COMMIT
 """ % subst
 
-    print rules
+    debug(rules)
     a.iptables_restore(family, rules)
 
 def open_listener(a, family, socket_type, addr):
@@ -179,7 +187,7 @@ def run_sockets(a, family=socket.AF_INET, socket_type=socket.SOCK_STREAM, socket
     for addrs in sockets:
         for addr in addrs:
         
-            print "### Opening listener %s" % (addr,)
+            debug("### Opening listener %s" % (addr,))
         
             l_sock = open_listener(a, family, socket_type, addr)
             open_sockets.append(l_sock)
@@ -192,29 +200,29 @@ def run_sockets(a, family=socket.AF_INET, socket_type=socket.SOCK_STREAM, socket
             else:
                 target_ip = target_ip6
             
-            print "### Connecting to %s" % ((target_ip, target_port),)
+            debug("### Connecting to %s" % ((target_ip, target_port),))
             try:
                 if relevant or not skip_irrelevant:
                     c_sock.connect((target_ip, target_port))
                     if socket_type == socket.SOCK_DGRAM:
                         c_sock.send("almafa")
-                    print "### Connected to %s" % ((target_ip, target_port),)
+                    debug("### Connected to %s" % ((target_ip, target_port),))
                 else:
-                    print "### Skipped connection to %s" % ((target_ip, target_port),)
+                    debug("### Skipped connection to %s" % ((target_ip, target_port),))
                     c_sock = None
             except socket.error:
                 # connection failed
                 c_sock = None
-                print "### Connection failed to %s" % ((target_ip, target_port),)
+                debug("### Connection failed to %s" % ((target_ip, target_port),))
             
             if relevant or not skip_irrelevant:
-                print "### Waiting for connection %s" % (addr,)
+                debug("### Waiting for connection %s" % (addr,))
                 (r, w, x) = a.select(open_sockets, [], [], timeout=2)
             else:
                 (r, w, x) = ([], [], [])
                 
             if socket_type == socket.SOCK_DGRAM and (len(r) + len(w) + len(x)) == 0:
-                print "### Datagram read failed on %s" % (addr,)
+                debug("### Datagram read failed on %s" % (addr,))
                 c_sock = None
             
             if socket_type == socket.SOCK_STREAM and c_sock != None and (len(r) + len(w) + len(x)) != 1:
@@ -277,6 +285,9 @@ def run_testcases(a, all_sockets):
 #           TCP listener on target-ip:50080, connection does not establish
 
 def main():
+    global debug_flag
+    
+    debug_flag = False
     try:
         a = connect_agent()
         #print a.iptables_save(family=socket.AF_INET)
