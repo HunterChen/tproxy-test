@@ -266,11 +266,19 @@ def run_sockets(a, family=socket.AF_INET, socket_type=socket.SOCK_STREAM, socket
     return success
 
 def run_testcases(a, all_sockets):
+    
+    global_success = True
     for family in (socket.AF_INET6, socket.AF_INET):
         for socket_type in (socket.SOCK_DGRAM, socket.SOCK_STREAM):
             for socket_rule in (False, True):
                 for explicit_on_ip in (False, True):
-                    run_sockets(a, family, socket_type, socket_rule, explicit_on_ip, all_sockets[(family, socket_rule)])
+                    if not run_sockets(a, family, socket_type, socket_rule, explicit_on_ip, all_sockets[(family, socket_rule)]):
+                        global_success = False
+
+    if global_success:
+        print "PASS: everything is fine"
+    else:
+        print "FAIL: some tests failed"
     
 # testcases
 #   TPROXY rule only, no "socket" match
