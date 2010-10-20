@@ -118,6 +118,7 @@ def load_iptables(a, family=socket.AF_INET, socket_type=socket.SOCK_STREAM, sock
 :INPUT ACCEPT [0:0]
 :FORWARD ACCEPT [0:0]
 :OUTPUT ACCEPT [0:0]
+-A INPUT -p icmpv6 -j ACCEPT
 -A INPUT -p tcp --dport 22 -j ACCEPT
 -A INPUT -m mark --mark 1/1 -j ACCEPT
 -A INPUT -j LOG --log-prefix "PF/INPUT: DROP "
